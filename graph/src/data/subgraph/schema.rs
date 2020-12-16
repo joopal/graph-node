@@ -435,7 +435,6 @@ pub struct EthereumContractDataSourceEntity {
     pub name: String,
     pub source: EthereumContractSourceEntity,
     pub mapping: EthereumContractMappingEntity,
-    pub templates: Vec<EthereumContractDataSourceTemplateEntity>,
 }
 
 impl TypedEntity for EthereumContractDataSourceEntity {
@@ -457,17 +456,6 @@ impl EthereumContractDataSourceEntity {
         let mapping_id = format!("{}-mapping", id);
         ops.extend(self.mapping.write_operations(subgraph, &mapping_id));
 
-        let template_ids: Vec<Value> = self
-            .templates
-            .into_iter()
-            .enumerate()
-            .map(|(i, template)| {
-                let template_id = format!("{}-templates-{}", id, i);
-                ops.extend(template.write_operations(subgraph, &template_id));
-                template_id.into()
-            })
-            .collect();
-
         let entity = entity! {
             id: id,
             kind: self.kind,
@@ -475,7 +463,6 @@ impl EthereumContractDataSourceEntity {
             name: self.name,
             source: source_id,
             mapping: mapping_id,
-            templates: template_ids,
         };
 
         ops.push(set_metadata_operation(
@@ -497,11 +484,6 @@ impl<'a> From<&'a super::DataSource> for EthereumContractDataSourceEntity {
             network: data_source.network.clone(),
             source: data_source.source.clone().into(),
             mapping: EthereumContractMappingEntity::from(&data_source.mapping),
-            templates: data_source
-                .templates
-                .iter()
-                .map(EthereumContractDataSourceTemplateEntity::from)
-                .collect(),
         }
     }
 }
@@ -516,7 +498,6 @@ pub struct DynamicEthereumContractDataSourceEntity {
     name: String,
     source: EthereumContractSourceEntity,
     mapping: EthereumContractMappingEntity,
-    templates: Vec<EthereumContractDataSourceTemplateEntity>,
     context: Option<DataSourceContext>,
 }
 
@@ -556,19 +537,8 @@ impl WriteOperations for DynamicEthereumContractDataSourceEntity {
             network,
             source: _,
             mapping: _,
-            templates,
             context,
         } = self;
-
-        let template_ids: Vec<Value> = templates
-            .into_iter()
-            .enumerate()
-            .map(|(i, template)| {
-                let template_id = format!("{}-templates-{}", id, i);
-                template.generate(&template_id, ops);
-                template_id.into()
-            })
-            .collect();
 
         let entity = entity! {
             id: id,
@@ -577,7 +547,6 @@ impl WriteOperations for DynamicEthereumContractDataSourceEntity {
             name: name,
             source: source_id,
             mapping: mapping_id,
-            templates: template_ids,
             deployment: deployment,
             ethereumBlockHash: ethereum_block_hash,
             ethereumBlockNumber: ethereum_block_number,
@@ -611,7 +580,6 @@ impl<'a, 'b, 'c>
             name,
             source,
             mapping,
-            templates,
             context,
         } = data_source;
 
@@ -624,10 +592,6 @@ impl<'a, 'b, 'c>
             network: network.clone(),
             source: source.clone().into(),
             mapping: EthereumContractMappingEntity::from(mapping),
-            templates: templates
-                .iter()
-                .map(EthereumContractDataSourceTemplateEntity::from)
-                .collect(),
             context: context.clone(),
         }
     }

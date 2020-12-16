@@ -90,7 +90,7 @@ where
         &mut self,
         logger: Logger,
         data_source: DataSource,
-        top_level_templates: Arc<Vec<DataSourceTemplate>>,
+        templates: Arc<Vec<DataSourceTemplate>>,
         host_metrics: Arc<HostMetrics>,
     ) -> Result<T::Host, anyhow::Error> {
         let mapping_request_sender = {
@@ -114,7 +114,7 @@ where
                 self.network.clone(),
                 self.subgraph_id.clone(),
                 data_source,
-                top_level_templates,
+                templates,
                 mapping_request_sender,
                 host_metrics,
             )
@@ -270,7 +270,7 @@ where
         &mut self,
         logger: &Logger,
         data_source: DataSource,
-        top_level_templates: Arc<Vec<DataSourceTemplate>>,
+        templates: Arc<Vec<DataSourceTemplate>>,
         metrics: Arc<HostMetrics>,
     ) -> Result<Option<Arc<T::Host>>, anyhow::Error> {
         // Protect against creating more than the allowed maximum number of data sources
@@ -283,12 +283,8 @@ where
             }
         }
 
-        let host = Arc::new(self.new_host(
-            logger.clone(),
-            data_source,
-            top_level_templates,
-            metrics.clone(),
-        )?);
+        let host =
+            Arc::new(self.new_host(logger.clone(), data_source, templates, metrics.clone())?);
 
         Ok(if self.hosts.contains(&host) {
             None
